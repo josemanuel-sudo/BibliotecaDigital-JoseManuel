@@ -29,6 +29,13 @@ public class BooksApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task GetBook_WithExistingId_ReturnsBook()
+    {
+        var response = await _client.GetAsync("/api/books/1");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CreateBook_WithValidData_ReturnsCreated()
     {
         var request = new CreateBookRequest
@@ -59,6 +66,53 @@ public class BooksApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
 
         var response = await _client.PostAsJsonAsync("/api/books", request);
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteBook_WithUnknownId_ReturnsNotFound()
+    {
+        var response = await _client.DeleteAsync("/api/books/9999");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteBook_WithoutActiveLoans_ReturnsNoContent()
+    {
+        var book = await CreateBookAsync("9780000000001");
+
+        var response = await _client.DeleteAsync($"/api/books/{book.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteBook_WithActiveLoan_ReturnsConflict()
+    {
+        var book = await CreateBookAsync("9780000000002");
+        var loanResponse = await _client.PostAsJsonAsync("/api/loans", new CreateLoanRequest
+        {
+            BookId = book.Id,
+            Borrower = "Test borrower",
+            LoanDate = new DateOnly(2026, 1, 1),
+            DueDate = new DateOnly(2026, 1, 8)
+        });
+        Assert.Equal(HttpStatusCode.Created, loanResponse.StatusCode);
+
+        var response = await _client.DeleteAsync($"/api/books/{book.Id}");
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    private async Task<BookResponse> CreateBookAsync(string isbn)
+    {
+        var response = await _client.PostAsJsonAsync("/api/books", new CreateBookRequest
+        {
+            Title = "Test book",
+            Author = "Test author",
+            Isbn = isbn,
+            PublishedYear = 2020,
+            AvailableCopies = 1
+        });
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        return Assert.IsType<BookResponse>(await response.Content.ReadFromJsonAsync<BookResponse>());
     }
 
     private sealed record BookResponse(int Id, string Title, string Author, string Isbn, int PublishedYear, int AvailableCopies);
