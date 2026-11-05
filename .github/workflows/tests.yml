@@ -1,114 +1,171 @@
-name: CI - Pruebas automatizadas
+name: SonarQube Cloud - Análisis de calidad
 
 on:
   push:
     branches:
-      - main
+      - '**'
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
-  group: tests-${{ github.ref }}
+  group: sonar-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  tests:
+  quality:
     name: Compilar y ejecutar todas las pruebas
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Descargar el repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Preparar .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+
+      - name: Preparar Java 21 para SonarScanner
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
+        with:
+          java-version: 21
+          distribution: zulu
 
       - name: Comprobar versión de .NET
         run: dotnet --info
 
+      - name: Instalar SonarScanner para .NET
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+          dotnet tool list --global
+
       - name: Restaurar dependencias
         run: dotnet restore BibliotecaDigitalE2E.sln
 
-      - name: Compilar la solución
-        run: dotnet build BibliotecaDigitalE2E.sln --configuration Release --no-restore
+      - name: Iniciar análisis de SonarQube Cloud
+        id: sonar_begin
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORGANIZATION: josemanuel-sudo
+          SONAR_PROJECT_KEY: josemanuel-sudo_BibliotecaDigital-JoseManuel2
+        run: |
+          : "${SONAR_TOKEN:?Configura el secret SONAR_TOKEN en GitHub}"
 
-      - name: Ejecutar pruebas unitarias
+          dotnet sonarscanner begin \
+            /k:"$SONAR_PROJECT_KEY" \
+            /o:"$SONAR_ORGANIZATION" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+            /d:sonar.qualitygate.wait=true
+
+      - name: Compilar solución para análisis
+        run: >-
+          dotnet build BibliotecaDigitalE2E.sln
+          --configuration Release
+          --no-restore
+          --no-incremental
+          --disable-build-servers
+
+      - name: Pruebas unitarias y cobertura
         run: >-
           dotnet test tests/Biblioteca.UnitTests/Biblioteca.UnitTests.csproj
           --configuration Release
           --no-build
           --no-restore
-          --logger "trx;LogFileName=unit-tests.trx"
+          --collect:"XPlat Code Coverage;Format=opencover"
           --results-directory TestResults/Unit
+          --logger "trx;LogFileName=unit-tests.trx"
 
-      - name: Ejecutar pruebas de integración
+      - name: Pruebas de integración y cobertura
         run: >-
           dotnet test tests/Biblioteca.IntegrationTests/Biblioteca.IntegrationTests.csproj
           --configuration Release
           --no-build
           --no-restore
-          --logger "trx;LogFileName=integration-tests.trx"
+          --collect:"XPlat Code Coverage;Format=opencover"
           --results-directory TestResults/Integration
+          --logger "trx;LogFileName=integration-tests.trx"
 
-      - name: Ejecutar pruebas E2E
+      - name: Arrancar API para las pruebas E2E
         run: |
-          set -euo pipefail
-          ASPNETCORE_URLS="http://127.0.0.1:5080" \
+          nohup env ASPNETCORE_URLS="http://127.0.0.1:5080" \
             dotnet src/Biblioteca.Api/bin/Release/net10.0/Biblioteca.Api.dll \
             > api.log 2>&1 &
-          api_pid=$!
+          echo $! > api.pid
 
-          cleanup() {
-            kill "$api_pid" 2>/dev/null || true
-            wait "$api_pid" 2>/dev/null || true
-          }
-          trap cleanup EXIT
-
-          api_ready=false
+      - name: Esperar disponibilidad de la API
+        run: |
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:5080/api/health > /dev/null; then
-              api_ready=true
+              echo "API disponible."
+              exit 0
+            fi
+
+            if ! kill -0 "$(cat api.pid)" 2>/dev/null; then
               break
             fi
 
-            if ! kill -0 "$api_pid" 2>/dev/null; then
-              break
-            fi
             echo "Esperando a que arranque la API..."
             sleep 2
           done
 
-          if [ "$api_ready" != true ]; then
-            echo "No se ha podido iniciar la API."
-            cat api.log
-            exit 1
-          fi
+          echo "No se ha podido iniciar la API."
+          cat api.log
+          exit 1
 
-          E2E_BASE_URL=http://127.0.0.1:5080 \
-            dotnet test tests/Biblioteca.E2ETests/Biblioteca.E2ETests.csproj \
-            --configuration Release \
-            --no-build \
-            --no-restore \
-            --logger "trx;LogFileName=e2e-tests.trx" \
-            --results-directory TestResults/E2E
+      - name: Ejecutar pruebas E2E
+        env:
+          E2E_BASE_URL: http://127.0.0.1:5080
+        run: >-
+          dotnet test tests/Biblioteca.E2ETests/Biblioteca.E2ETests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          --logger "trx;LogFileName=e2e-tests.trx"
+          --results-directory TestResults/E2E
 
       - name: Mostrar registros de la API si hay errores
         if: failure()
         run: cat api.log || true
 
-      - name: Guardar resultados de las pruebas
+      - name: Detener la API
         if: always()
-        uses: actions/upload-artifact@v4
+        run: |
+          if [ -f api.pid ]; then
+            kill "$(cat api.pid)" 2>/dev/null || true
+          fi
+
+      - name: Finalizar análisis de SonarQube Cloud
+        if: always() && steps.sonar_begin.outcome == 'success'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          : "${SONAR_TOKEN:?Configura el secret SONAR_TOKEN en GitHub}"
+          dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
+      - name: Guardar informes generados
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
-          name: resultados-pruebas
+          name: informes-calidad-y-cobertura
           path: TestResults/
           if-no-files-found: warn
           retention-days: 7

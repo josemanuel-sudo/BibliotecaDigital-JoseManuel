@@ -33,8 +33,11 @@ public class BooksApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var request = new CreateBookRequest
         {
-            Title = "El código Da Vinci", Author = "Dan Brown",
-            Isbn = "9780307474278", PublishedYear = 2003, AvailableCopies = 4
+            Title = "El código Da Vinci",
+            Author = "Dan Brown",
+            Isbn = "9780307474278",
+            PublishedYear = 2003,
+            AvailableCopies = 4
         };
 
         var response = await _client.PostAsJsonAsync("/api/books", request);
@@ -47,8 +50,11 @@ public class BooksApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var request = new CreateBookRequest
         {
-            Title = "Duplicado", Author = "Autor",
-            Isbn = "9780307474728", PublishedYear = 2020, AvailableCopies = 1
+            Title = "Duplicado",
+            Author = "Autor",
+            Isbn = "9780307474728",
+            PublishedYear = 2020,
+            AvailableCopies = 1
         };
 
         var response = await _client.PostAsJsonAsync("/api/books", request);
