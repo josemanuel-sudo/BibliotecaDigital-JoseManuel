@@ -27,9 +27,9 @@ public sealed class BooksController(LibraryService service) : ControllerBase
             : CreatedAtAction(nameof(GetById), new { id = result.Book!.Id }, result.Book);
     }
 
-   
 
-     [HttpDelete("{id:int}")]
+
+    [HttpDelete("{id:int}")]
     public IActionResult Delete(int id)
     {
         if (service.GetBook(id) is null)

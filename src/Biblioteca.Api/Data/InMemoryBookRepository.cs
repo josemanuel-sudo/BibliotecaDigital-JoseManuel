@@ -38,7 +38,11 @@ public sealed class InMemoryBookRepository : IBookRepository, IBookUpdateReposit
 
     private static Book Clone(Book b) => new()
     {
-        Id = b.Id, Title = b.Title, Author = b.Author, Isbn = b.Isbn,
-        PublishedYear = b.PublishedYear, AvailableCopies = b.AvailableCopies
+        Id = b.Id,
+        Title = b.Title,
+        Author = b.Author,
+        Isbn = b.Isbn,
+        PublishedYear = b.PublishedYear,
+        AvailableCopies = b.AvailableCopies
     };
 }

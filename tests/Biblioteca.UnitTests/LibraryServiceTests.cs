@@ -23,8 +23,11 @@ public class LibraryServiceTests
 
         var result = CreateService().CreateBook(new CreateBookRequest
         {
-            Title = "Clean Code", Author = "Robert Martin",
-            Isbn = "9780132350884", PublishedYear = 2008, AvailableCopies = 2
+            Title = "Clean Code",
+            Author = "Robert Martin",
+            Isbn = "9780132350884",
+            PublishedYear = 2008,
+            AvailableCopies = 2
         });
 
         Assert.Null(result.Error);
@@ -41,8 +44,11 @@ public class LibraryServiceTests
 
         var result = CreateService().CreateBook(new CreateBookRequest
         {
-            Title = "Another book", Author = "Author",
-            Isbn = "9780132350884", PublishedYear = 2020, AvailableCopies = 1
+            Title = "Another book",
+            Author = "Author",
+            Isbn = "9780132350884",
+            PublishedYear = 2020,
+            AvailableCopies = 1
         });
 
         Assert.Null(result.Book);
@@ -69,7 +75,8 @@ public class LibraryServiceTests
 
         var result = CreateService().CreateLoan(new CreateLoanRequest
         {
-            BookId = 3, Borrower = "Ana López",
+            BookId = 3,
+            Borrower = "Ana López",
             LoanDate = new DateOnly(2026, 11, 3),
             DueDate = new DateOnly(2026, 11, 10)
         });
@@ -85,7 +92,8 @@ public class LibraryServiceTests
 
         var result = CreateService().CreateLoan(new CreateLoanRequest
         {
-            BookId = 1, Borrower = "Ana López",
+            BookId = 1,
+            Borrower = "Ana López",
             LoanDate = new DateOnly(2026, 11, 10),
             DueDate = new DateOnly(2026, 11, 10)
         });

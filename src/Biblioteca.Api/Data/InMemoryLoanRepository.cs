@@ -26,8 +26,12 @@ public sealed class InMemoryLoanRepository : ILoanRepository
 
     private static Loan Clone(Loan x) => new()
     {
-        Id = x.Id, BookId = x.BookId, Borrower = x.Borrower,
-        LoanDate = x.LoanDate, DueDate = x.DueDate,
-        ReturnDate = x.ReturnDate, Status = x.Status
+        Id = x.Id,
+        BookId = x.BookId,
+        Borrower = x.Borrower,
+        LoanDate = x.LoanDate,
+        DueDate = x.DueDate,
+        ReturnDate = x.ReturnDate,
+        Status = x.Status
     };
 }

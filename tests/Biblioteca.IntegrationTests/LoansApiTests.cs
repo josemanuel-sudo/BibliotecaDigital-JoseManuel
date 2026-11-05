@@ -14,7 +14,8 @@ public class LoansApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var request = new CreateLoanRequest
         {
-            BookId = 1, Borrower = "María Pérez",
+            BookId = 1,
+            Borrower = "María Pérez",
             LoanDate = new DateOnly(2026, 11, 3),
             DueDate = new DateOnly(2026, 11, 17)
         };
@@ -28,7 +29,8 @@ public class LoansApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var request = new CreateLoanRequest
         {
-            BookId = 3, Borrower = "María Pérez",
+            BookId = 3,
+            Borrower = "María Pérez",
             LoanDate = new DateOnly(2026, 11, 3),
             DueDate = new DateOnly(2026, 11, 17)
         };

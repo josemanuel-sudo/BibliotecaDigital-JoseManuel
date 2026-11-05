@@ -39,6 +39,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Preparar Java 21 para SonarScanner
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         with:
           java-version: 21
@@ -48,6 +49,7 @@ jobs:
         run: dotnet --info
 
       - name: Instalar SonarScanner para .NET
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           dotnet tool install --global dotnet-sonarscanner
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
@@ -58,6 +60,7 @@ jobs:
 
       - name: Iniciar análisis de SonarQube Cloud
         id: sonar_begin
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORGANIZATION: josemanuel-sudo
