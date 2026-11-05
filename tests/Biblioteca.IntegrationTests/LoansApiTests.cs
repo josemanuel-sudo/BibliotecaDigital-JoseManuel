@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using Biblioteca.Api.Contracts;
 using Xunit;
 
@@ -36,6 +37,19 @@ public class LoansApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         };
 
         var response = await _client.PostAsJsonAsync("/api/loans", request);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateLoan_WithoutDates_ReturnsBadRequest()
+    {
+        using var content = new StringContent(
+            """{"bookId":1,"borrower":"Test borrower"}""",
+            Encoding.UTF8,
+            "application/json");
+
+        var response = await _client.PostAsync("/api/loans", content);
+
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 

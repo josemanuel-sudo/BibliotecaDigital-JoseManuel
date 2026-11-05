@@ -1,4 +1,5 @@
 using Biblioteca.Api.Contracts;
+using Biblioteca.Api.Models;
 using Biblioteca.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,9 +10,12 @@ namespace Biblioteca.Api.Controllers;
 public sealed class BooksController(LibraryService service) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyCollection<Book>), StatusCodes.Status200OK)]
     public IActionResult GetAll() => Ok(service.GetBooks());
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(Book), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetById(int id)
     {
         var book = service.GetBook(id);
@@ -19,6 +23,8 @@ public sealed class BooksController(LibraryService service) : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(Book), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public IActionResult Create(CreateBookRequest request)
     {
         var result = service.CreateBook(request);
@@ -30,6 +36,9 @@ public sealed class BooksController(LibraryService service) : ControllerBase
 
 
     [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public IActionResult Delete(int id)
     {
         if (service.GetBook(id) is null)
