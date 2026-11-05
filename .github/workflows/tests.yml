@@ -54,12 +54,10 @@ jobs:
         id: sonar_begin
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
-          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: josemanuel-sudo
+          SONAR_PROJECT_KEY: josemanuel-sudo_BibliotecaDigital-JoseManuel2
         run: |
           : "${SONAR_TOKEN:?Configura el secret SONAR_TOKEN en GitHub}"
-          : "${SONAR_ORGANIZATION:?Configura la variable SONAR_ORGANIZATION en GitHub}"
-          : "${SONAR_PROJECT_KEY:?Configura la variable SONAR_PROJECT_KEY en GitHub}"
 
           dotnet sonarscanner begin \
             /k:"$SONAR_PROJECT_KEY" \
