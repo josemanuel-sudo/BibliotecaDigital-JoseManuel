@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+
   pull_request:
     branches:
       - main
+
   workflow_dispatch:
 
 permissions:
@@ -17,16 +19,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
   build:
+
     name: Preparar sitio web
+
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Descargar repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar GitHub Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Comprobar archivos del sitio
         run: |
@@ -42,14 +48,19 @@ jobs:
           find site -maxdepth 2 -type f
 
       - name: Subir archivos para GitHub Pages
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site/
 
+
   deploy:
+
     name: Publicar en GitHub Pages
+
     needs: build
+
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+
     runs-on: ubuntu-latest
 
     permissions:
@@ -64,4 +75,4 @@ jobs:
     steps:
       - name: Desplegar sitio web
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
