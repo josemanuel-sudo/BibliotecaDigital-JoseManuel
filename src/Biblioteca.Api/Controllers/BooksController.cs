@@ -12,7 +12,7 @@ public sealed class BooksController(LibraryService service) : ControllerBase
     public IActionResult GetAll() => Ok(service.GetBooks());
 
     [HttpGet("{id:int}")]
-    public IActionResult GetById(int id
+    public IActionResult GetById(int id)
     {
         var book = service.GetBook(id);
         return book is null ? NotFound(new { message = "Libro no encontrado." }) : Ok(book);
